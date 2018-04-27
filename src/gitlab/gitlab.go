@@ -76,6 +76,9 @@ func GetLatestTag(path string) (tag string, err error) {
 func NewTag(projectCfg marathon.Config) (newTag string, err error) {
 	path := projectCfg.Maintainer + "/" + projectCfg.Name + "/tags"
 	latestTag, err := GetLatestTag(path)
+	if err != nil {
+		return
+	}
 	newTag = addTagVersion(latestTag, "patch")
 
 	// get authenticity_token
