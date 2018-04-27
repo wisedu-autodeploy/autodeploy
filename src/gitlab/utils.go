@@ -10,9 +10,9 @@ func addTagVersion(tag string, t string) string {
 	splices := strings.Split(tag, "v")
 	versionSplices := strings.Split(splices[1], ".")
 
-	major := versionSplices[0]
-	minor := versionSplices[1]
-	patch := versionSplices[2]
+	major := versionSplices[len(versionSplices)-3]
+	minor := versionSplices[len(versionSplices)-2]
+	patch := versionSplices[len(versionSplices)-1]
 
 	switch t {
 	case "major":
@@ -26,7 +26,11 @@ func addTagVersion(tag string, t string) string {
 		patch = strconv.Itoa(num + 1)
 	}
 
-	newVersion := strings.Join([]string{major, minor, patch}, ".")
+	versionSplices[len(versionSplices)-3] = major
+	versionSplices[len(versionSplices)-2] = minor
+	versionSplices[len(versionSplices)-1] = patch
+
+	newVersion := strings.Join(versionSplices, ".")
 	newTag := strings.Join([]string{splices[0], newVersion}, "v")
 
 	return newTag

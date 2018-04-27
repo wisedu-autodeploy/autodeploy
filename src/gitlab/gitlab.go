@@ -2,6 +2,7 @@ package gitlab
 
 import (
 	"autodeploy/src/client"
+	"autodeploy/src/marathon"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -22,12 +23,20 @@ var (
 	session     client.Sessioner
 )
 
+// Config .
+type Config struct {
+	Origin      string
+	LoginAction string
+	Username    string
+	Password    string
+}
+
 // Init init preset params.
-func Init(cfg map[string]string) (success bool, err error) {
-	origin = cfg["origin"]
-	loginAction = cfg["loginAction"]
-	username = cfg["username"]
-	password = cfg["password"]
+func Init(cfg Config) (success bool, err error) {
+	origin = cfg.Origin
+	loginAction = cfg.LoginAction
+	username = cfg.Username
+	password = cfg.Password
 
 	loginURL = origin + loginAction
 
@@ -43,6 +52,10 @@ func GetLatestTag(path string) (tag string, err error) {
 	projectTagsURL := origin + "/" + path
 
 	res, err := session.Get(projectTagsURL)
+
+	if res.StatusCode == 404 {
+		err = errors.New("project not found")
+	}
 	if err != nil {
 		return "", err
 	}
@@ -60,8 +73,8 @@ func GetLatestTag(path string) (tag string, err error) {
 }
 
 // NewTag create a new tag.
-func NewTag(projectCfg map[string]string) (newTag string, err error) {
-	path := projectCfg["maintainer"] + "/" + projectCfg["projectName"] + "/tags"
+func NewTag(projectCfg marathon.Config) (newTag string, err error) {
+	path := projectCfg.Maintainer + "/" + projectCfg.Name + "/tags"
 	latestTag, err := GetLatestTag(path)
 	newTag = addTagVersion(latestTag, "patch")
 
@@ -169,19 +182,19 @@ func judgeIsFinish(buildLogURL string) (ok bool, logContent string, image string
 	if len(matches) > 1 {
 		image = matches[1]
 	}
-	// if strings.Contains(logContent, "error") {
-	// 	ok = false
-	// 	err = errors.New("Build failed")
-	// 	return
-	// }
+	if strings.Contains(logContent, "[ERROR] ") {
+		ok = false
+		err = errors.New("Build failed")
+		return
+	}
 	ok = strings.Contains(logContent, "Build succeeded")
 
 	return
 }
 
 // WatchBuildLog watch build log.
-func WatchBuildLog(projectCfg map[string]string, tag string, showLogDetail bool) (ok bool, logContent string, image string, err error) {
-	path := origin + "/" + projectCfg["maintainer"] + "/" + projectCfg["projectName"]
+func WatchBuildLog(projectCfg marathon.Config, tag string, showLogDetail bool) (ok bool, logContent string, image string, err error) {
+	path := origin + "/" + projectCfg.Maintainer + "/" + projectCfg.Name
 	buildLogID, err := getBuildLogID(path, tag)
 	if err != nil {
 		return
@@ -207,9 +220,21 @@ func WatchBuildLog(projectCfg map[string]string, tag string, showLogDetail bool)
 		if showLogDetail {
 			s := string([]rune(logContent))
 			splices := strings.Split(s, "\n")
-			if len(splices)-1 > currentLine {
-				fmt.Print("\n", strings.Join(splices[currentLine:], "\n"))
-				currentLine = len(splices) - 1
+			focusSlice := []string{}
+			for _, splice := range splices {
+				if strings.Contains(splice, "[INFO] ") {
+					focusSlice = append(focusSlice, splice)
+				} else if strings.Contains(splice, "[WARNING] ") {
+					focusSlice = append(focusSlice, splice)
+				} else if strings.Contains(splice, "[ERROR] ") {
+					focusSlice = append(focusSlice, splice)
+				} else if regexp.MustCompile(`\[\d{2}:\d{2}:\d{2}\]`).Match([]byte(splice)) {
+					focusSlice = append(focusSlice, splice)
+				}
+			}
+			if len(focusSlice)-1 > currentLine {
+				fmt.Print("\n", strings.Join(focusSlice[currentLine:], "\n"))
+				currentLine = len(focusSlice) - 1
 			}
 		}
 
