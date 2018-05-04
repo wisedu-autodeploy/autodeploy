@@ -14,9 +14,10 @@ var session client.Sessioner
 
 // Config .
 type Config struct {
-	Maintainer string
-	Name       string
-	Short      string
+	Maintainer   string
+	Name         string
+	MarathonName string
+	Short        string
 }
 
 type volume struct {

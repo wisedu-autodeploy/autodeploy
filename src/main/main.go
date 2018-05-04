@@ -39,6 +39,7 @@ func init() {
 
 	projectCfg.Maintainer = ""
 	projectCfg.Name = ""
+	projectCfg.MarathonName = ""
 
 	projects = []marathon.Config{}
 
@@ -95,32 +96,36 @@ func findIndex(s []marathon.Config, e marathon.Config) int {
 func start() {
 	var err error
 
-	log.Println("login gitlab...")
+	fmt.Println("======== \033[0;32m(๑˘̴͈́꒵˘̴͈̀) ˮ Welcome!\033[0;m ========")
+	fmt.Printf("Start deploying %s/%s\n", config.Project.Maintainer, config.Project.Name)
+
+	log.Println("[1/4] login gitlab...")
 	_, err = gitlab.Init(config.Gitlab)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	log.Println("creating new tag...")
+	log.Println("[2/4] creating new tag...")
 	tag, err := gitlab.NewTag(config.Project)
 	if err != nil {
 		log.Fatalln(err)
 	}
 	log.Println("created new tag:", tag)
 
-	log.Println("build log:")
+	log.Println("[3/4] building, please wait...")
 	ok, _, image, err := gitlab.WatchBuildLog(config.Project, tag, showLogDetail)
 	if err != nil || !ok {
 		log.Fatalln(err)
 	}
 	log.Println("image pushed succeed:", image)
 
-	log.Println("deploying, please wait...")
-	ok, err = marathon.Deploy(config.Project.Name, image)
+	log.Println("[4/4] deploying, please wait...")
+	ok, err = marathon.Deploy(config.Project.MarathonName, image)
 	if err != nil || !ok {
 		log.Fatalln(err)
 	}
 	log.Println("deploy succeed")
+	fmt.Println("======== \033[0;32m(๑˘̴͈́꒵˘̴͈̀) ˮ вyё вyё\033[0;m ========")
 }
 
 func main() {
@@ -147,12 +152,8 @@ func main() {
 			Usage: "name of the project",
 		},
 		cli.StringFlag{
-			Name:  "short, s",
-			Usage: "auto deploy using short of the project",
-		},
-		cli.IntFlag{
-			Name:  "index, i",
-			Usage: "auto deploy using index of the project",
+			Name:  "marathon-name, M",
+			Usage: "marathon name of the project",
 		},
 		cli.BoolFlag{
 			Name:  "log, l",
@@ -164,46 +165,58 @@ func main() {
 		{
 			Name:  "set",
 			Usage: "set username/password",
-			Action: func(c *cli.Context) error {
+			Action: func(c *cli.Context) (err error) {
 				key := c.Args().Get(0)
 				val := c.Args().Get(1)
+				if key == "" || val == "" {
+					err = errors.New("invalid command")
+					return
+				}
 				if key == "username" {
 					config.Gitlab.Username = val
 				}
 				if key == "password" {
 					config.Gitlab.Password = val
 				}
-				err := writeConfig()
+				err = writeConfig()
 				return err
 			},
 		},
 		{
 			Name:  "add",
-			Usage: "add projects",
+			Usage: "add projects e.g. add [maintainer] [projectName] [marathonName] [short](short name for the project)",
 			Action: func(c *cli.Context) (err error) {
 				maintainer := c.Args().Get(0)
 				name := c.Args().Get(1)
-				short := c.Args().Get(2)
-				if maintainer != "" && name != "" {
-					if short == "" {
-						short = name
-					}
-					cfg := marathon.Config{
-						Maintainer: maintainer,
-						Name:       name,
-						Short:      short,
-					}
+				marathonName := c.Args().Get(2)
+				short := c.Args().Get(3)
 
-					foundIndex := findIndex(config.Projects, cfg)
-					if foundIndex != -1 { // found
-						config.Projects[foundIndex] = cfg
-					} else { // not found
-						config.Projects = append(config.Projects, cfg)
-					}
-					err = writeConfig()
-				} else {
-					err = errors.New("please input maintainer and project name")
+				if name == "" || maintainer == "" {
+					err = errors.New("invalid command")
+					return
 				}
+
+				if marathonName == "" {
+					marathonName = name
+				}
+
+				if short == "" {
+					short = name
+				}
+				cfg := marathon.Config{
+					Maintainer:   maintainer,
+					Name:         name,
+					MarathonName: marathonName,
+					Short:        short,
+				}
+
+				foundIndex := findIndex(config.Projects, cfg)
+				if foundIndex != -1 { // found
+					config.Projects[foundIndex] = cfg
+				} else { // not found
+					config.Projects = append(config.Projects, cfg)
+				}
+				err = writeConfig()
 				return err
 			},
 		},
@@ -212,19 +225,59 @@ func main() {
 			Usage: "list projects",
 			Action: func(c *cli.Context) {
 				for index, project := range config.Projects {
-					fmt.Println(index+1, project.Short, "->", project.Maintainer+"/"+project.Name)
+					fmt.Printf("[\033[0;32m%d\033[0;m] \033[0;31m%s\033[0;m -> %s\n", index+1, project.Short, project.Maintainer+"/"+project.Name)
 				}
 			},
 		},
 		{
+			Name:  "init",
+			Usage: "init configs",
+			Action: func(c *cli.Context) (err error) {
+				config.Projects = []marathon.Config{
+					{
+						Maintainer:   "wecloud-counselor",
+						Name:         "wec-counselor-apps",
+						MarathonName: "wec-counselor-apps",
+						Short:        "counselor",
+					},
+					{
+						Maintainer:   "wecloud-counselor",
+						Name:         "wec-counselor-sign-apps",
+						MarathonName: "wec-counselor-sign-apps",
+						Short:        "sign",
+					},
+					{
+						Maintainer:   "wecloud-counselor",
+						Name:         "wec-counselor-collector-apps",
+						MarathonName: "wec-counselor-collector-apps",
+						Short:        "collector",
+					},
+					{
+						Maintainer:   "wecloud-counselor",
+						Name:         "wec-counselor-worklog-apps",
+						MarathonName: "wec-counselor-worklog-apps",
+						Short:        "worklog",
+					},
+					{
+						Maintainer:   "wecloud-comapp",
+						Name:         "wec-comapp-newscore",
+						MarathonName: "common-newscore-apps",
+						Short:        "newscore",
+					},
+				}
+				err = writeConfig()
+				return err
+			},
+		},
+		{
 			Name:  "short",
-			Usage: "auto deploy using short of the project",
+			Usage: "auto deploy using short name of the project",
 			Action: func(c *cli.Context) (err error) {
 				showLogDetail = c.Bool("log")
 
 				short := c.Args().Get(0)
 				if short == "" {
-					err = errors.New("please input short")
+					err = errors.New("invalid command")
 					return
 				}
 
@@ -236,9 +289,10 @@ func main() {
 					}
 				}
 				if foundIndex == -1 {
-					err = errors.New("not found")
+					err = fmt.Errorf("not found project with short named: %s", short)
 					return
 				}
+				config.Project = config.Projects[foundIndex]
 				writeConfig()
 
 				start()
@@ -262,14 +316,13 @@ func main() {
 					err = errors.New("please input index")
 				}
 				index, err := strconv.Atoi(indexStr)
-				if index <= 0 {
-					err = errors.New("please input index (>0)")
+				if index <= 0 || index > len(config.Projects) {
+					err = errors.New("invalid index")
 				}
 				if err != nil {
 					return
 				}
-				project := config.Projects[index-1]
-				config.Project = project
+				config.Project = config.Projects[index-1]
 				writeConfig()
 
 				start()
@@ -297,20 +350,25 @@ func main() {
 		if c.String("name") != "" {
 			config.Project.Name = c.String("name")
 		}
-		if c.Int("index") != 0 {
-			if c.Int("index") > len(config.Projects) {
-				err = errors.New("index out of range")
-			}
-			project := config.Projects[c.Int("index")-1]
-			config.Project = project
+		if c.String("marathon-name") != "" {
+			config.Project.MarathonName = c.String("marathon-name")
+		} else {
+			config.Project.MarathonName = config.Project.Name
 		}
-		if c.String("short") != "" {
-			if c.Int("index") > len(config.Projects) {
-				err = errors.New("index out of range")
-			}
-			project := config.Projects[c.Int("index")-1]
-			config.Project = project
-		}
+		// if c.Int("index") != 0 {
+		// 	if c.Int("index") > len(config.Projects) {
+		// 		err = errors.New("index out of range")
+		// 	}
+		// 	project := config.Projects[c.Int("index")-1]
+		// 	config.Project = project
+		// }
+		// if c.String("short") != "" {
+		// 	if c.Int("index") > len(config.Projects) {
+		// 		err = errors.New("index out of range")
+		// 	}
+		// 	project := config.Projects[c.Int("index")-1]
+		// 	config.Project = project
+		// }
 		showLogDetail = c.Bool("log")
 
 		if config.Gitlab.Username == "" {
@@ -321,6 +379,9 @@ func main() {
 		}
 		if config.Project.Maintainer == "" {
 			return errors.New("please input project maintainer")
+		}
+		if config.Project.MarathonName == "" {
+			return errors.New("please input project marathon name")
 		}
 		if config.Project.Name == "" {
 			return errors.New("please input project name")
