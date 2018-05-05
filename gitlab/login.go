@@ -1,7 +1,7 @@
 package gitlab
 
 import (
-	"autodeploy/src/client"
+	"autodeploy/client"
 	"errors"
 	"net/http"
 	"net/url"

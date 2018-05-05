@@ -1,8 +1,8 @@
 package gitlab
 
 import (
-	"autodeploy/src/client"
-	"autodeploy/src/marathon"
+	"autodeploy/client"
+	"autodeploy/marathon"
 	"errors"
 	"fmt"
 	"io/ioutil"

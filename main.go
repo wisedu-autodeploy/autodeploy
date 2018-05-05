@@ -1,8 +1,8 @@
 package main
 
 import (
-	"autodeploy/src/gitlab"
-	"autodeploy/src/marathon"
+	"autodeploy/gitlab"
+	"autodeploy/marathon"
 	"encoding/json"
 	"errors"
 	"fmt"

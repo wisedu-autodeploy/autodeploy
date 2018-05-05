@@ -1,7 +1,7 @@
 package marathon
 
 import (
-	"autodeploy/src/client"
+	"autodeploy/client"
 	"encoding/json"
 	"io/ioutil"
 	"strings"
