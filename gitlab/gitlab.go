@@ -1,8 +1,6 @@
 package gitlab
 
 import (
-	"autodeploy/client"
-	"autodeploy/marathon"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -12,6 +10,8 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/lisiur/autodeploy/client"
+	"github.com/lisiur/autodeploy/marathon"
 )
 
 var (

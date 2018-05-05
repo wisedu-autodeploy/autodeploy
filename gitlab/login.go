@@ -1,7 +1,6 @@
 package gitlab
 
 import (
-	"autodeploy/client"
 	"errors"
 	"net/http"
 	"net/url"
@@ -9,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/lisiur/autodeploy/client"
 )
 
 // login return a new gitlab session.

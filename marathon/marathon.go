@@ -1,13 +1,13 @@
 package marathon
 
 import (
-	"autodeploy/client"
 	"encoding/json"
 	"io/ioutil"
 	"strings"
 	"time"
 
 	"github.com/bitly/go-simplejson"
+	"github.com/lisiur/autodeploy/client"
 )
 
 var session client.Sessioner
