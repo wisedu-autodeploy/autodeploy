@@ -146,6 +146,29 @@ func checkDeployDone(deploymentID string) (ok bool, err error) {
 	return
 }
 
+func GetApps() (appIDs []string) {
+	res, err := session.Get("http://172.16.7.23:8080/v2/groups")
+	if err != nil {
+		return nil
+	}
+
+	resp, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil
+	}
+
+	js, err := simplejson.NewJson([]byte(string(resp)))
+
+	apps, _ := js.Get("apps").Array()
+	for i := range apps {
+		jsApp := js.Get("apps").GetIndex(i)
+		// get app id
+		id, _ := jsApp.Get("id").String()
+		appIDs = append(appIDs, id)
+	}
+	return appIDs
+}
+
 func getAppID(appName string) (appInfo app, err error) {
 	appInfo = app{}
 

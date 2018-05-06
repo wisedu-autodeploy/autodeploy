@@ -20,6 +20,7 @@ var (
 	loginURL    string
 	username    string
 	password    string
+	projectsURL string
 	session     client.Sessioner
 )
 
@@ -39,6 +40,7 @@ func Init(cfg Config) (success bool, err error) {
 	password = cfg.Password
 
 	loginURL = origin + loginAction
+	projectsURL = origin + "/dashboard/projects"
 
 	session, err = login()
 	if err != nil {
