@@ -2,6 +2,7 @@ package marathon
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"strings"
 	"time"
@@ -92,6 +93,7 @@ func Deploy(appName string, image string) (ok bool, err error) {
 			},
 		},
 	}
+
 	jsonParams, _ := json.Marshal(params)
 
 	res, err := session.Put("http://172.16.7.23:8080/v2/apps/"+appInfo.ID, string(jsonParams))
@@ -102,6 +104,10 @@ func Deploy(appName string, image string) (ok bool, err error) {
 	resp, err := ioutil.ReadAll(res.Body)
 	js, err := simplejson.NewJson([]byte(string(resp)))
 	if err != nil {
+		return
+	}
+	if res.StatusCode != 200 {
+		err = errors.New(string(resp))
 		return
 	}
 
@@ -146,6 +152,7 @@ func checkDeployDone(deploymentID string) (ok bool, err error) {
 	return
 }
 
+// GetApps .
 func GetApps() (appIDs []string) {
 	res, err := session.Get("http://172.16.7.23:8080/v2/groups")
 	if err != nil {
@@ -164,7 +171,7 @@ func GetApps() (appIDs []string) {
 		jsApp := js.Get("apps").GetIndex(i)
 		// get app id
 		id, _ := jsApp.Get("id").String()
-		appIDs = append(appIDs, id)
+		appIDs = append(appIDs, id[1:]) // 去掉 开始的 /
 	}
 	return appIDs
 }
@@ -204,6 +211,7 @@ func getAppID(appName string) (appInfo app, err error) {
 
 			appInfo.ID = id
 			appInfo.Ports = ports
+			break
 		}
 	}
 
