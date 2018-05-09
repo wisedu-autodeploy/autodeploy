@@ -1,7 +1,6 @@
 package gitlab
 
 import (
-	"errors"
 	"log"
 	"regexp"
 	"strconv"
@@ -33,17 +32,16 @@ func GetAllApps() (apps []App, err error) {
 	}
 
 	// 获取最后一页的页码
+	var maxPage int
 	lastURL, exists := doc.Find(".pagination .last a").First().Attr("href")
 	if !exists {
-		err = errors.New("not found lastURL")
+		// err = errors.New("not found lastURL")
+		maxPage = 1
+	} else {
+		getPageRegexp := regexp.MustCompile(`.*?page=(\d*)`)
+		maxPageStr := getPageRegexp.FindStringSubmatch(lastURL)[1]
+		maxPage, _ = strconv.Atoi(maxPageStr)
 	}
-	if err != nil {
-		return nil, err
-	}
-
-	getPageRegexp := regexp.MustCompile(`.*?page=(\d*)`)
-	maxPageStr := getPageRegexp.FindStringSubmatch(lastURL)[1]
-	maxPage, _ := strconv.Atoi(maxPageStr)
 
 	// 多线程请求每个页面的数据
 	wg.Add(maxPage)

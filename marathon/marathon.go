@@ -18,6 +18,7 @@ type Config struct {
 	Maintainer   string
 	Name         string
 	MarathonName string
+	MarathonID   string
 	Short        string
 }
 
@@ -62,8 +63,10 @@ func init() {
 }
 
 // Deploy .
-func Deploy(appName string, image string) (ok bool, err error) {
-	appInfo, err := getAppID(appName)
+func Deploy(cfg Config, image string) (ok bool, err error) {
+	marathonID := cfg.MarathonID
+	marathonName := cfg.MarathonName
+	appInfo, err := getAppInfo(marathonID)
 	params := map[string]deployParams{
 		"container": deployParams{
 			Type: "DOCKER",
@@ -83,7 +86,7 @@ func Deploy(appName string, image string) (ok bool, err error) {
 						HostPort:      0,
 						ServicePort:   appInfo.Ports[0],
 						Protocol:      "tcp",
-						Name:          appName,
+						Name:          marathonName,
 						Labels:        map[string]string{},
 					},
 				},
@@ -176,7 +179,7 @@ func GetApps() (appIDs []string) {
 	return appIDs
 }
 
-func getAppID(appName string) (appInfo app, err error) {
+func getAppInfo(appName string) (appInfo app, err error) {
 	appInfo = app{}
 
 	res, err := session.Get("http://172.16.7.23:8080/v2/groups")
