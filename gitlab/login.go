@@ -8,25 +8,30 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/lisiur/autodeploy/client"
+	"github.com/wisedu-autodeploy/autodeploy/client"
 )
 
 // login return a new gitlab session.
-func login() (session client.Sessioner, err error) {
+func login(user User) (session client.Sessioner, err error) {
+	if gSession != nil {
+		return gSession, nil
+	}
+
 	// get cookie
-	cookie, err := getCookie()
+	cookie, err := getCookie(user)
+	if err != nil {
+		return
+	}
 
 	// set session
-	session = client.NewSession().
-		SetCookie(cookie)
-		// AddHeader("Origin", origin).
-		// AddHeader("Referer", loginURL)
+	session = client.NewSession().SetCookie(cookie)
 
+	gSession = session
 	return session, err
 }
 
 // getCookie return a valid login cookie.
-func getCookie() (cookie string, err error) {
+func getCookie(user User) (cookie string, err error) {
 	authenticityToken, cookie, err := getAuthenticityToken()
 	if err != nil {
 		return
@@ -35,17 +40,17 @@ func getCookie() (cookie string, err error) {
 	formData := url.Values{
 		"utf8":               {"✓"},
 		"authenticity_token": {authenticityToken},
-		"user[login]":        {username},
-		"user[password]":     {password},
+		"user[login]":        {user.Username},
+		"user[password]":     {user.Password},
 		"user[remember_me]":  {"0"},
 	}
 
 	session := client.NewSession().
 		SetCookie(cookie).
-		AddHeader("Origin", origin).
-		AddHeader("Referer", loginURL)
+		AddHeader("Origin", gOrigin).
+		AddHeader("Referer", gLoginURL)
 
-	res, err := session.PostForm(loginURL, formData)
+	res, err := session.PostForm(gLoginURL, formData)
 	if err != nil {
 		return "", err
 	}
@@ -64,9 +69,9 @@ func getCookie() (cookie string, err error) {
 
 // getAuthenticityToken return authenticityToken and preset cookie.
 func getAuthenticityToken() (authenticityToken string, cookie string, err error) {
-	res, err := http.Get(loginURL)
+	res, err := http.Get(gLoginURL)
 	if err != nil {
-		return "", "", err
+		return
 	}
 	defer res.Body.Close()
 
@@ -82,7 +87,7 @@ func getAuthenticityToken() (authenticityToken string, cookie string, err error)
 		err = errors.New("not found authenticity_token")
 	}
 	if err != nil {
-		return "", cookie, err
+		return
 	}
 
 	return authenticityToken, cookie, err

@@ -8,18 +8,15 @@ import (
 	"time"
 
 	"github.com/bitly/go-simplejson"
-	"github.com/lisiur/autodeploy/client"
+	"github.com/wisedu-autodeploy/autodeploy/client"
 )
 
 var session client.Sessioner
 
 // Config .
 type Config struct {
-	Maintainer   string
-	Name         string
 	MarathonName string
 	MarathonID   string
-	Short        string
 }
 
 type volume struct {
@@ -67,6 +64,10 @@ func Deploy(cfg Config, image string) (ok bool, err error) {
 	marathonID := cfg.MarathonID
 	marathonName := cfg.MarathonName
 	appInfo, err := getAppInfo(marathonID)
+	if err != nil {
+		return
+	}
+
 	params := map[string]deployParams{
 		"container": deployParams{
 			Type: "DOCKER",
@@ -179,7 +180,7 @@ func GetApps() (appIDs []string) {
 	return appIDs
 }
 
-func getAppInfo(appName string) (appInfo app, err error) {
+func getAppInfo(appID string) (appInfo app, err error) {
 	appInfo = app{}
 
 	res, err := session.Get("http://172.16.7.23:8080/v2/groups")
@@ -201,7 +202,7 @@ func getAppInfo(appName string) (appInfo app, err error) {
 		// get app id
 		id, _ := jsApp.Get("id").String()
 
-		if strings.Contains(id, appName) {
+		if strings.Contains(id, appID) {
 			jsPorts := jsApp.Get("ports")
 			jsPortsArr, _ := jsPorts.Array()
 

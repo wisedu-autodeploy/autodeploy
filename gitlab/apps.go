@@ -10,17 +10,14 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-var wg sync.WaitGroup
-
-// App .
-type App struct {
-	Maintainer string
-	Name       string
-}
-
 // GetAllApps .
-func GetAllApps() (apps []App, err error) {
-	res, err := session.Get(projectsURL)
+func GetAllApps(user User) (apps []Project, err error) {
+	session, err := login(user)
+	if err != nil {
+		return
+	}
+
+	res, err := session.Get(gProjectsURL)
 	if err != nil {
 		return nil, err
 	}
@@ -44,11 +41,12 @@ func GetAllApps() (apps []App, err error) {
 	}
 
 	// 多线程请求每个页面的数据
+	var wg sync.WaitGroup
 	wg.Add(maxPage)
-	appsChan := make(chan []App)
+	appsChan := make(chan []Project)
 
 	for i := 1; i <= maxPage; i++ {
-		go getOnePageApps(i, appsChan)
+		go getOnePageApps(user, i, appsChan, &wg)
 	}
 
 	appsChan <- apps
@@ -62,9 +60,14 @@ func GetAllApps() (apps []App, err error) {
 	return apps, err
 }
 
-func getOnePageApps(page int, appsChan chan []App) {
+func getOnePageApps(user User, page int, appsChan chan []Project, wg *sync.WaitGroup) {
+	session, err := login(user)
+	if err != nil {
+		return
+	}
+
 	pageStr := strconv.Itoa(page)
-	res, err := session.Get(projectsURL + "/?page=" + pageStr)
+	res, err := session.Get(gProjectsURL + "/?page=" + pageStr)
 	if err != nil {
 		log.Fatalln(err)
 		return
@@ -77,7 +80,7 @@ func getOnePageApps(page int, appsChan chan []App) {
 		return
 	}
 
-	tmpApps := []App{}
+	tmpApps := []Project{}
 	doc.Find(".projects-list .project-row a.project").Each(func(i int, s *goquery.Selection) {
 		href, exist := s.Attr("href")
 		if !exist {
@@ -85,7 +88,7 @@ func getOnePageApps(page int, appsChan chan []App) {
 			return
 		}
 		splices := strings.Split(href, "/")
-		tmpApps = append(tmpApps, App{
+		tmpApps = append(tmpApps, Project{
 			Maintainer: splices[1],
 			Name:       splices[2],
 		})
