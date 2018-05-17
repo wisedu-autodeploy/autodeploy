@@ -157,18 +157,21 @@ func checkDeployDone(deploymentID string) (ok bool, err error) {
 }
 
 // GetApps .
-func GetApps() (appIDs []string) {
+func GetApps() (appIDs []string, err error) {
 	res, err := session.Get("http://172.16.7.23:8080/v2/groups")
 	if err != nil {
-		return nil
+		return
 	}
 
 	resp, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return nil
+		return
 	}
 
 	js, err := simplejson.NewJson([]byte(string(resp)))
+	if err != nil {
+		return
+	}
 
 	apps, _ := js.Get("apps").Array()
 	for i := range apps {
@@ -177,7 +180,7 @@ func GetApps() (appIDs []string) {
 		id, _ := jsApp.Get("id").String()
 		appIDs = append(appIDs, id[1:]) // 去掉 开始的 /
 	}
-	return appIDs
+	return
 }
 
 func getAppInfo(appID string) (appInfo app, err error) {

@@ -3,6 +3,7 @@ package gitlab
 import (
 	"errors"
 	"io/ioutil"
+	"log"
 	"regexp"
 	"strings"
 	"sync"
@@ -23,33 +24,54 @@ func WatchBuildLog(params Params, tag string, logChan chan *Logger, wg *sync.Wai
 	}
 
 	// get build log id
+	if mode == "debug" {
+		log.Println("try to get build log id...")
+	}
 	buildLogID, err := getBuildLogID(params, tag)
 	if err != nil {
 		handleErr(err)
 		return
 	}
+	if mode == "debug" {
+		log.Println("got build log id:", buildLogID)
+	}
 
 	// get build log url
+	if mode == "debug" {
+		log.Println("try to get build log url...")
+	}
 	buildLogURL, err := getBuildLogURL(params, buildLogID)
 	if err != nil {
 		handleErr(err)
 		return
 	}
+	if mode == "debug" {
+		log.Println("got build log url:", buildLogURL)
+	}
 
-	// log.Println("watching build log, waiting...")
+	if mode == "debug" {
+		log.Println("try to watch build log...")
+	}
 	time.Sleep(time.Duration(60) * time.Second)
 
 	for {
-		ok, image, log, err := judgeIsFinish(params, buildLogURL)
+		if mode == "debug" {
+			log.Println("try to judge is build done...")
+		}
+		ok, image, logContent, err := judgeIsFinish(params, buildLogURL)
 		if err != nil {
 			handleErr(err)
 			break
 		}
 
-		s := string([]rune(log))
+		s := string([]rune(logContent))
 		splices := strings.Split(s, "\n")
 
 		if ok {
+			if mode == "debug" {
+				log.Println("build success")
+				log.Println("write log to log chan")
+			}
 			wg.Done()
 			logger.Status = 1
 			logger.Image = image
@@ -58,6 +80,10 @@ func WatchBuildLog(params Params, tag string, logChan chan *Logger, wg *sync.Wai
 			logChan <- logger
 			break
 		} else {
+			if mode == "debug" {
+				log.Println("building...")
+				log.Println("write log to log chan")
+			}
 			logger.Status = 0
 			logger.Image = image
 			logger.Log = splices
@@ -65,6 +91,26 @@ func WatchBuildLog(params Params, tag string, logChan chan *Logger, wg *sync.Wai
 			logChan <- logger
 		}
 		time.Sleep(time.Duration(10) * time.Second)
+	}
+	return
+}
+
+// GetBuildLog get build log.
+func GetBuildLog(callback func(l *Logger), logChan chan *Logger, wg *sync.WaitGroup) {
+	for {
+		if mode == "debug" {
+			log.Println("try to get build log from log chan...")
+		}
+		logger := <-logChan
+		callback(logger)
+		if logger.Status != 0 {
+			if mode == "debug" {
+				log.Println("get build log done & final status:", logger.Status)
+			}
+			wg.Done()
+			logChan <- logger
+			break
+		}
 	}
 	return
 }

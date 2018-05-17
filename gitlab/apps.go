@@ -69,14 +69,14 @@ func getOnePageApps(user User, page int, appsChan chan []Project, wg *sync.WaitG
 	pageStr := strconv.Itoa(page)
 	res, err := session.Get(gProjectsURL + "/?page=" + pageStr)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 		return
 	}
 	defer res.Body.Close()
 
 	doc, err := goquery.NewDocumentFromResponse(res)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 		return
 	}
 
@@ -84,7 +84,7 @@ func getOnePageApps(user User, page int, appsChan chan []Project, wg *sync.WaitG
 	doc.Find(".projects-list .project-row a.project").Each(func(i int, s *goquery.Selection) {
 		href, exist := s.Attr("href")
 		if !exist {
-			log.Fatalln(false)
+			log.Println(false)
 			return
 		}
 		splices := strings.Split(href, "/")

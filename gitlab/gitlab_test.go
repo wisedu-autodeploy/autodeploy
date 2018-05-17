@@ -2,7 +2,7 @@ package gitlab
 
 var TestValidUser = User{
 	Username: "lisiurday",
-	Password: "Yihe210210.",
+	Password: "wiseduauth",
 }
 
 var TestInvalidUser = User{

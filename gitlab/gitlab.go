@@ -11,6 +11,8 @@ var (
 	gProjectsURL = gOrigin + "/dashboard/projects"
 )
 
+var mode = ""
+
 // User is gitlab login params.
 type User struct {
 	Username string
@@ -35,4 +37,8 @@ type Logger struct {
 	Image   string
 	Status  int // -1 => fail; 0 => init or running; 1 => success
 	Message string
+}
+
+func debugger() {
+	mode = "debug"
 }

@@ -4,21 +4,19 @@ import (
 	"testing"
 )
 
-func Test_GetLatestTag(t *testing.T) {
-}
-
 func Test_NewTag(t *testing.T) {
-	// tag, err := NewTag(TestValidParams)
-	// if err != nil {
-	// 	t.Error("fail at NewTag: ", err)
-	// }
-	// latestTag, err := GetLatestTag(TestValidParams)
-	// if err != nil {
-	// 	t.Error("fail at NewTag: ", err)
-	// }
-	// if latestTag != tag {
-	// 	t.Error("fail at NewTag")
-	// }
+	t.Skip("skip Test_NewTag")
+	tag, err := NewTag(TestValidParams)
+	if err != nil {
+		t.Error("fail at NewTag: ", err)
+	}
+	latestTag, err := GetLatestTag(TestValidParams)
+	if err != nil {
+		t.Error("fail at GetLatestTag: ", err)
+	}
+	if latestTag != tag {
+		t.Error("fail at NewTag")
+	}
 }
 
 func Test_NewTag_Invalid(t *testing.T) {
