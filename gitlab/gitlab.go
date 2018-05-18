@@ -39,6 +39,6 @@ type Logger struct {
 	Message string
 }
 
-func debugger() {
+func Debugger() {
 	mode = "debug"
 }

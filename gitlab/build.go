@@ -19,6 +19,7 @@ func WatchBuildLog(params Params, tag string, logChan chan *Logger, wg *sync.Wai
 	handleErr := func(err error) {
 		logger.Status = -1
 		logger.Message = err.Error()
+		log.Println(err)
 		logChan <- logger
 		return
 	}
