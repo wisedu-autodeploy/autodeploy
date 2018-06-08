@@ -146,6 +146,9 @@ func getBuildLogID(params Params, tag string) (id string, err error) {
 			}
 			splices := strings.Split(href, "/")
 			id = splices[len(splices)-1]
+		} else {
+			err = errors.New("not found target tag at /pipelines?scope=tags")
+			return
 		}
 	})
 	if id == "" {
